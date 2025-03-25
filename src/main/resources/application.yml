@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: sb01-hrbank-team10-ref-ver
+  profiles:
+    active: dev # dev 환경에서 prod 하면 사진은 로컬로 저장되므로 문제가 생길 수 있습니다 :)
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        jdbc: # PostgreSQL에서 날짜/시간 타입 변환 처리를 위한 설정
+          time_zone=UTC:
+          .lob:
+            non_contextual_creation=true:
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  swagger-ui:
+    operations-sorter: alpha
+    tags-sorter: alpha
+    path: /swagger-ui
+    display-request-duration: true
+    doc-expansion: none
+    filter: true
+    show-extensions: true

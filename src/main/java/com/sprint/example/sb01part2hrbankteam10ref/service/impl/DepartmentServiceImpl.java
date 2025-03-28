@@ -166,7 +166,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
   @Override
   public List<DepartmentDto> getDepartment(String name, String description) {
-    List<Department> departments = departmentRepository.findByNameAndDescription(
+    List<Department> departments = departmentRepository.findByNameAndDescriptionCustom(
         name != null ? name : "",
         description != null ? description : "");
 

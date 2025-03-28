@@ -1,5 +1,6 @@
 package com.sprint.example.sb01part2hrbankteam10ref.repository.custom.impl;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -98,5 +99,21 @@ public class DepartmentRepositoryCustomImpl implements DepartmentRepositoryCusto
         // 기본값은 ID로 정렬
         return isAscending ? department.id.asc() : department.id.desc();
     }
+  }
+
+  @Override
+  public List<Department> findByNameAndDescriptionCustom(String name, String description) {
+    QDepartment department = QDepartment.department;
+    BooleanBuilder builder = new BooleanBuilder();
+
+    if (name != null && !name.isEmpty()) {
+      builder.and(department.name.like("%" + name + "%"));
+    }
+    if (description != null && !description.isEmpty()) {
+      builder.and(department.description.like("%" + description + "%"));
+    }
+    return queryFactory.selectFrom(department)
+        .where(builder)
+        .fetch();
   }
 }

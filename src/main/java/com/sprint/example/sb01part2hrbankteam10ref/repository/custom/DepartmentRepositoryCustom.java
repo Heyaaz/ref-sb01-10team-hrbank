@@ -11,4 +11,7 @@ public interface DepartmentRepositoryCustom {
         int size, 
         String sortField, 
         boolean isAscending);
+
+    List<Department> findByNameAndDescriptionCustom(String name, String description);
+
 }

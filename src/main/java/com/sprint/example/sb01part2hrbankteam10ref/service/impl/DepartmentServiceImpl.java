@@ -10,7 +10,6 @@ import com.sprint.example.sb01part2hrbankteam10ref.global.exception.RestApiExcep
 import com.sprint.example.sb01part2hrbankteam10ref.global.exception.errorcode.DepartmentErrorCode;
 import com.sprint.example.sb01part2hrbankteam10ref.global.exception.errorcode.EmployeeErrorCode;
 import com.sprint.example.sb01part2hrbankteam10ref.mapper.DepartmentMapper;
-import com.sprint.example.sb01part2hrbankteam10ref.mapper.DepartmentUpdateMapper;
 import com.sprint.example.sb01part2hrbankteam10ref.repository.DepartmentRepository;
 import com.sprint.example.sb01part2hrbankteam10ref.repository.EmployeeRepository;
 import com.sprint.example.sb01part2hrbankteam10ref.service.DepartmentService;
@@ -34,7 +33,6 @@ public class DepartmentServiceImpl implements DepartmentService {
   private final DepartmentRepository departmentRepository;
   private final DepartmentMapper departmentMapper;
   private final EmployeeRepository employeeRepository;
-  private final DepartmentUpdateMapper departmentUpdateMapper;
 
   @Transactional
   @Override
@@ -92,6 +90,7 @@ public class DepartmentServiceImpl implements DepartmentService {
   }
 
   @Transactional
+  @Override
   public DepartmentDto update(Integer id, DepartmentUpdateRequest request) {
     log.info("부서 업데이트 요청: id={}, request={}", id, request);
     
@@ -199,104 +198,84 @@ public class DepartmentServiceImpl implements DepartmentService {
   }
 
   @Override
-  @Transactional(readOnly = true)
-  public CursorPageResponseDto<DepartmentResponseDto> getDepartments(
-      String nameOrDescription,
-      Integer idAfter,
-      String cursor,
-      int size,
-      String sortField,
+  public CursorPageResponseDto<DepartmentResponseDto> getDepartmentsWithCursor(
+      String nameOrDescription, 
+      Integer idAfter, 
+      String cursor, 
+      int size, 
+      String sortField, 
       String sortDirection) {
-
-    // 기본값 설정
-    size = size <= 0 ? 10 : size;
-    sortField = sortField == null || sortField.isEmpty() ? "establishedDate" : sortField;
-    sortDirection = sortDirection == null || sortDirection.isEmpty() ? "asc" : sortDirection;
-
-    // 커서에서 idAfter 추출
-    if (cursor != null && !cursor.isEmpty() && idAfter == null) {
-      if ("name".equals(sortField)) {
-        // 이름 기반 커서
-        Department dept = (Department) departmentRepository.findByName(cursor)
-            .orElse(null);
-        if (dept != null) {
-          idAfter = dept.getId();
-        }
-      } else if ("establishedDate".equals(sortField)) {
-        // 설립일 기반 커서 - 해당 날짜 이후의 첫 번째 부서를 찾아야 함
+      
+    log.info("부서 커서 페이징 조회 요청: nameOrDescription={}, idAfter={}, cursor={}, size={}, sortField={}, sortDirection={}", 
+        nameOrDescription, idAfter, cursor, size, sortField, sortDirection);
+    
+    try {
+      // 1. 정렬 방향 설정
+      boolean isAscending = "asc".equalsIgnoreCase(sortDirection);
+      log.debug("정렬 방향: {}", isAscending ? "오름차순" : "내림차순");
+      
+      // 2. 커서 처리 (idAfter 파라미터가 우선)
+      Integer cursorId = null;
+      if (idAfter != null) {
+        cursorId = idAfter;
+      } else if (cursor != null && !cursor.isEmpty()) {
         try {
-          LocalDateTime date = LocalDateTime.parse(cursor);
-          Department dept = (Department) departmentRepository.findFirstByEstablishedDateAfterOrderById(date)
-              .orElse(null);
-          if (dept != null) {
-            idAfter = dept.getId();
-          }
-        } catch (Exception e) {
-          // 날짜 파싱 오류 처리
-          log.warn("설립일 커서 파싱 오류: {}", cursor);
-        }
-      } else {
-        // ID 기반 커서
-        try {
-          idAfter = Integer.parseInt(cursor);
+          cursorId = Integer.parseInt(cursor);
         } catch (NumberFormatException e) {
-          log.warn("ID 커서 파싱 오류: {}", cursor);
+          log.warn("유효하지 않은 커서 값: {}", cursor);
         }
       }
-    }
-
-    // 데이터 조회 (size + 1로 조회하여 hasNext 판단)
-    List<Department> departments = departmentRepository.findDepartmentsWithCursor(
-        nameOrDescription,
-        idAfter,
-        sortField,
-        sortDirection
-    );
-
-    // 전체 개수 조회
-    Long totalElements = departmentRepository.countByNameContainingOrDescriptionContaining(
-        nameOrDescription != null ? nameOrDescription : "",
-        nameOrDescription != null ? nameOrDescription : ""
-    );
-
-    // 페이지네이션 처리
-    boolean hasNext = departments.size() > size;
-    List<DepartmentResponseDto> content = departments.stream()
-        .limit(size)
-        .map(departmentMapper::toDto) // DepartmentDto로 변환
-        .map(dto -> DepartmentResponseDto.builder()
-            .id(dto.getId())
-            .name(dto.getName())
-            .description(dto.getDescription())
-            .establishedDate(dto.getEstablishedDate())
-            .employeeCount(dto.getEmployeeCount())
-            .build()) // DepartmentResponseDto로 변환
-        .toList();
-
-    String nextCursor = null;
-    Integer nextIdAfter = null;
-    if (hasNext && !content.isEmpty()) {
-      Department lastItem = departments.get((int)Math.min(size, departments.size()) - 1);
-      nextIdAfter = lastItem.getId();
-
-      // 정렬 필드에 따라 커서 값을 다르게 설정
-      if ("name".equals(sortField)) {
-        nextCursor = lastItem.getName();
-      } else if ("establishedDate".equals(sortField)) {
-        nextCursor = lastItem.getEstablishedDate().toString();
-      } else {
-        nextCursor = null;
+      
+      // 3. QueryDSL을 사용하여 부서 조회
+      List<Department> departments = departmentRepository.findDepartmentsWithCursor(
+          nameOrDescription, cursorId, size, sortField, isAscending);
+      
+      log.debug("조회된 부서 수: {}", departments.size());
+      
+      // 4. DTO 변환 - 수정된 부분
+      List<DepartmentResponseDto> responseDtos = departments.stream()
+          .map(department -> {
+              DepartmentDto dto = departmentMapper.toDto(department);
+              // 빌더 패턴 사용하여 모든 필드 초기화
+              return DepartmentResponseDto.builder()
+                  .id(dto.getId())
+                  .name(dto.getName())
+                  .description(dto.getDescription())
+                  .establishedDate(dto.getEstablishedDate())
+                  .employeeCount(dto.getEmployeeCount())
+                  .build();
+          })
+          .collect(Collectors.toList());
+      
+      // 5. 다음 커서 생성
+      String nextCursor = null;
+      Long nextIdAfterValue = null;
+      boolean hasNextValue = false;
+      
+      if (!departments.isEmpty() && departments.size() >= size) {
+        Department lastDepartment = departments.get(departments.size() - 1);
+        nextCursor = String.valueOf(lastDepartment.getId());
+        nextIdAfterValue = Long.valueOf(lastDepartment.getId());
+        hasNextValue = true;
       }
+      
+      // 6. 응답 생성 - 모든 필드 초기화
+      CursorPageResponseDto<DepartmentResponseDto> response = CursorPageResponseDto.<DepartmentResponseDto>builder()
+          .content(responseDtos)
+          .nextCursor(nextCursor)
+          .nextIdAfter(nextIdAfterValue)
+          .size(size)
+          .totalElements((long) responseDtos.size())
+          .hasNext(hasNextValue)
+          .build();
+      
+      log.info("부서 커서 페이징 조회 완료: 결과 수={}, 다음 커서={}", responseDtos.size(), nextCursor);
+      return response;
+      
+    } catch (Exception e) {
+      log.error("부서 커서 페이징 조회 중 오류 발생", e);
+      throw e;
     }
-
-    return CursorPageResponseDto.<DepartmentResponseDto>builder()
-        .content(content)
-        .nextCursor(nextCursor)
-        .nextIdAfter(nextIdAfter != null ? nextIdAfter.longValue() : null)
-        .size(size)
-        .totalElements(totalElements)
-        .hasNext(hasNext)
-        .build();
   }
 
   private LocalDateTime parseLocalDateTime(String dateString) {

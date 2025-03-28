@@ -12,15 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -66,32 +58,23 @@ public class DepartmentController implements DepartmentDocs {
   @Override
   public ResponseEntity<DepartmentDto> getDepartment(@PathVariable Integer id) {
     DepartmentDto department = departmentService.find(id);
-
-    return ResponseEntity.ok()
-    .body(department);
+    return ResponseEntity.ok().body(department);
   }
 
   // 부서 목록 조회
   @GetMapping
-  @Override
-  public ResponseEntity<CursorPageResponseDto<DepartmentResponseDto>> getDepartments(
-      @RequestParam(required = false) String nameOrDescription,
-      @RequestParam(required = false) Integer idAfter,
-      @RequestParam(required = false) String cursor,
-      @RequestParam(defaultValue = "10") int size,
-      @RequestParam(defaultValue = "establishedDate") String sortField,
-      @RequestParam(defaultValue = "asc") String sortDirection) {
+  public ResponseEntity<CursorPageResponseDto<DepartmentResponseDto>> getDepartmentsWithCursor(
+      @RequestParam(value = "nameOrDescription", required = false) String nameOrDescription,
+      @RequestParam(value = "idAfter", required = false) Integer idAfter,
+      @RequestParam(value = "size", defaultValue = "10") int size,
+      @RequestParam(value = "cursor", required = false) String cursor,
+      @RequestParam(value = "sortField", defaultValue = "establishedDate") String sortField,
+      @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection) {
 
-    CursorPageResponseDto<DepartmentResponseDto> response = departmentService.getDepartments(
-        nameOrDescription,
-        idAfter,
-        cursor,
-        size,
-        sortField,
-        sortDirection
-    );
-
-    return ResponseEntity.ok()
-        .body(response);
+    // 서비스 계층에서 페이징 처리 및 DTO 변환이 이루어짐
+    CursorPageResponseDto<DepartmentResponseDto> response = departmentService.getDepartmentsWithCursor(
+        nameOrDescription, idAfter, cursor, size, sortField, sortDirection);
+    
+    return ResponseEntity.ok(response);
   }
 }

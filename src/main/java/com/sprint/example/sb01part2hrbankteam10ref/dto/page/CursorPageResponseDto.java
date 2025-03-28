@@ -17,4 +17,6 @@ public class CursorPageResponseDto<T> {
   private int size;
   private Long totalElements;
   private boolean hasNext;
+
+
 }

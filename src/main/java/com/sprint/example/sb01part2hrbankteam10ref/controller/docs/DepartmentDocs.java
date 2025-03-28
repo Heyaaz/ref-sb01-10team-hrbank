@@ -5,6 +5,7 @@ import com.sprint.example.sb01part2hrbankteam10ref.dto.department.DepartmentDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.department.DepartmentResponseDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.department.DepartmentUpdateRequest;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.page.CursorPageResponseDto;
+import com.sprint.example.sb01part2hrbankteam10ref.entity.Department;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -84,33 +86,4 @@ public interface DepartmentDocs {
             @PathVariable Integer id
     );
 
-    @Operation(summary = "부서 목록 조회", description = "부서 목록을 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "조회 성공",
-                    content = @Content(schema = @Schema(implementation = CursorPageResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청",
-                    content = @Content(examples = @ExampleObject(value = ""))),
-            @ApiResponse(responseCode = "500", description = "서버 오류",
-                    content = @Content(examples = @ExampleObject(value = "{ 'error': '담당자에게 문의해주세요.' }")))
-    })
-    @GetMapping
-    ResponseEntity<CursorPageResponseDto<DepartmentResponseDto>> getDepartments(
-            @Parameter(description = "부서 이름 또는 설명", example = "개발팀")
-            @RequestParam(required = false) String nameOrDescription,
-
-            @Parameter(description = "이전 페이지 마지막 요소 ID")
-            @RequestParam(required = false) Integer idAfter,
-
-            @Parameter(description = "커서 (다음 페이지 시작점)")
-            @RequestParam(required = false) String cursor,
-
-            @Parameter(description = "페이지 크기 (기본값: 10)", example = "10")
-            @RequestParam(required = false, defaultValue = "10") int size,
-
-            @Parameter(description = "정렬 필드 (name 또는 establishedDate)", example = "establishedDate")
-            @RequestParam(required = false, defaultValue = "establishedDate") String sortField,
-
-            @Parameter(description = "정렬 방향 (asc 또는 desc, 기본값: asc)", example = "asc")
-            @RequestParam(required = false, defaultValue = "asc") String sortDirection
-    );
 }

@@ -1,6 +1,5 @@
 package com.sprint.example.sb01part2hrbankteam10ref.controller.api;
 
-import com.sprint.example.sb01part2hrbankteam10ref.controller.docs.EmployeeHistoryDocs;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee_history.ChangeLogDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee_history.CursorPageResponseChangeLogDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee_history.DiffDto;
@@ -19,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/change-logs")
 @RequiredArgsConstructor
-public class EmployeeHistoryController implements EmployeeHistoryDocs {
+public class EmployeeHistoryController {
 
     private final EmployeeHistoryService employeeHistoryService;
 
@@ -38,7 +37,6 @@ public class EmployeeHistoryController implements EmployeeHistoryDocs {
     }
 
     @GetMapping
-    @Override
     public ResponseEntity<CursorPageResponseChangeLogDto<ChangeLogDto>> getEmployeeHistories(
             @RequestParam(required = false) String employeeNumber,
             @RequestParam(required = false) String type,
@@ -59,14 +57,12 @@ public class EmployeeHistoryController implements EmployeeHistoryDocs {
     }
 
     @GetMapping("/{id}/diffs")
-    @Override
     public ResponseEntity<List<DiffDto>> getChangeDiffs(@PathVariable Integer id) {
         List<DiffDto> diffList = employeeHistoryService.getChangeDiffs(id);
         return ResponseEntity.ok(diffList);
     }
 
     @GetMapping("/count")
-    @Override
     public ResponseEntity<Long> countEmployeeHistories(
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,

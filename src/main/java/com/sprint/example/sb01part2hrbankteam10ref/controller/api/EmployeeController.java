@@ -1,6 +1,5 @@
 package com.sprint.example.sb01part2hrbankteam10ref.controller.api;
 
-import com.sprint.example.sb01part2hrbankteam10ref.controller.docs.EmployeeDocs;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeResponseDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.page.CursorPageResponseDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeCreateRequest;
@@ -37,14 +36,13 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/employees")
 @RequiredArgsConstructor
-public class EmployeeController implements EmployeeDocs {
+public class EmployeeController {
 
   private final EmployeeService employeeService;
   private final EmployeeStatService employeeStatusService;
 
 
   @PostMapping
-  @Override
   public ResponseEntity<EmployeeDto> createEmployee (
       HttpServletRequest httpServletRequest,
       @Valid @RequestPart(name = "employee")EmployeeCreateRequest request,
@@ -56,7 +54,6 @@ public class EmployeeController implements EmployeeDocs {
   }
 
   @PatchMapping("/{id}")
-  @Override
   public ResponseEntity<EmployeeDto> updateEmployee (
       HttpServletRequest httpServletRequest,
       @PathVariable Integer id,
@@ -70,14 +67,12 @@ public class EmployeeController implements EmployeeDocs {
   }
   
   @GetMapping("/{id}")
-  @Override
   public ResponseEntity<EmployeeDto> getEmployee (@PathVariable Integer id) {
     return ResponseEntity.ok()
         .body(employeeService.getById(id));
   }
 
   @DeleteMapping("/{id}")
-  @Override
   public ResponseEntity<String> deleteEmployee (
       HttpServletRequest httpServletRequest,
       @PathVariable Integer id
@@ -111,7 +106,6 @@ public class EmployeeController implements EmployeeDocs {
   }
 
   @GetMapping("/stats/distribution")
-  @Override
   public ResponseEntity<List<EmployeeDistributionDto>> getDistribution(
       @RequestParam(defaultValue = "department") String groupBy,
       @RequestParam(defaultValue = "ACTIVE") EmployeeStatus Status) {
@@ -121,7 +115,6 @@ public class EmployeeController implements EmployeeDocs {
   }
 
   @GetMapping(value = "/stats/trend")
-  @Override
   public ResponseEntity<List<EmployeeTrendDto>> getEmployeeTrend(
       @RequestParam(required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime from,

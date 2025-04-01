@@ -1,6 +1,5 @@
 package com.sprint.example.sb01part2hrbankteam10ref.controller.api;
 
-import com.sprint.example.sb01part2hrbankteam10ref.controller.docs.BackupDocs;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.backup.BackupDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.backup.CursorPageResponseBackupDto;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.Backup;
@@ -25,14 +24,13 @@ import java.util.List;
 @RestController
 @RequestMapping("api/backups")
 @RequiredArgsConstructor
-public class BackupController implements BackupDocs {
+public class BackupController{
 
     private final BackupService backupService;
     private final BackupRepository backupRepository;
 
     // 백업 요청
     @PostMapping
-    @Override
     public ResponseEntity<Integer> backup(HttpServletRequest request) {
         Integer backupId = backupService.performBackupByHand(request);
         return ResponseEntity.status(HttpStatus.OK).body(backupId);
@@ -40,7 +38,6 @@ public class BackupController implements BackupDocs {
 
     // 백업 상태로 가장 최근 백업 얻기
     @GetMapping("/latest")
-    @Override
     public ResponseEntity<BackupDto> getLastBackup(
         @RequestParam(value = "status", defaultValue = "COMPLETED") Backup.BackupStatus status
     ){
@@ -57,7 +54,6 @@ public class BackupController implements BackupDocs {
 
     // 백업 목록 조회
     @GetMapping
-    @Override
     public ResponseEntity<CursorPageResponseBackupDto> getBackupList(
             @RequestParam(required = false) String worker,
             @RequestParam(required = false) Backup.BackupStatus status,

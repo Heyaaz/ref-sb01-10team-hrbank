@@ -1,6 +1,5 @@
 package com.sprint.example.sb01part2hrbankteam10ref.controller.api;
 
-import com.sprint.example.sb01part2hrbankteam10ref.controller.docs.BinaryContentDocs;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.BinaryContent;
 import com.sprint.example.sb01part2hrbankteam10ref.global.exception.RestApiException;
 import com.sprint.example.sb01part2hrbankteam10ref.global.exception.errorcode.BinaryContentErrorCode;
@@ -18,13 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("api/files")
 @RequiredArgsConstructor
-public class BinaryContentController implements BinaryContentDocs {
+public class BinaryContentController {
 
   private final BinaryContentStorage binaryContentStorage;
   private final BinaryContentRepository binaryContentRepository;
 
   @GetMapping("/{id}/download")
-  @Override
   public ResponseEntity<Resource> download(@PathVariable(value = "id") Integer binaryContentId) {
     String contentType = binaryContentRepository.findById(binaryContentId)
         .map(BinaryContent::getContentType)

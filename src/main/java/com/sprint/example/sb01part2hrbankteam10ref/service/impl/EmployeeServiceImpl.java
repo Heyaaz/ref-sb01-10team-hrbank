@@ -76,7 +76,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         .employeeNumber(employeeNumber)
         .position(request.getPosition())
         .hireDate(hireDate)
-        .department(department)
+        .department(request.getDepartmentId() != null ? department : null)
         .profileImage(newProfile)
         .status(EmployeeStatus.ACTIVE)
         .build();
@@ -105,13 +105,31 @@ public class EmployeeServiceImpl implements EmployeeService {
       }
     });
     Optional.ofNullable(request.getPosition()).ifPresent(employee::updatePosition);
-    Optional.ofNullable(request.getStatus()).ifPresent(employee::updateStatus);
     Optional.ofNullable(request.getHireDate()).ifPresent(hireDate -> {
       employee.updateHireDate(parseLocalDateTime(hireDate));
     });
-    Optional.ofNullable(request.getDepartmentId()).ifPresent(departmentId -> {
-      employee.updateDepartment(getDepartmentOrThrow(departmentId));
+    Optional.ofNullable(request.getStatus()).ifPresent(status -> {
+      log.info("상태 변경 : {} -> {}", employee.getStatus(), status);
+      employee.updateStatus(status);
+      if(status == EmployeeStatus.RESIGNED){
+        String departmentName = employee.getDepartment() != null ? employee.getDepartment().getName() : "없음";
+        log.info("이전 부서 = {}", departmentName);
+        employee.updateDepartment(null);
+        log.info("부서 정보 제거 후 : {}", employee.getDepartment() != null ? employee.getDepartment().getName() : "없음");
+      } else {
+        // 퇴사 상태가 아닌 경우에만 부서 변경 적용
+        Optional.ofNullable(request.getDepartmentId()).ifPresent(departmentId -> {
+          employee.updateDepartment(getDepartmentOrThrow(departmentId));
+        });
+      }
     });
+
+    // 퇴사 상태가 아닌 경우에만 부서 정보 업데이트
+    if(request.getStatus() == null && employee.getStatus() != EmployeeStatus.RESIGNED) {
+      Optional.ofNullable(request.getDepartmentId()).ifPresent(departmentId -> {
+        employee.updateDepartment(getDepartmentOrThrow(departmentId));
+      });
+    }
 
     BinaryContent newProfile = null;
     if (validateFile(profile)) {
@@ -143,7 +161,13 @@ public class EmployeeServiceImpl implements EmployeeService {
 
   @Override
   public EmployeeDto getById(Integer id) {
-    return EmployeeMapper.toDto(getByIdOrThrow(id));
+    Employee employee = getByIdOrThrow(id);
+    log.info("직원 조회 결과: id={}, 부서={}", id,
+        employee.getDepartment() != null ? employee.getDepartment().getName() : "없음");
+    EmployeeDto dto = EmployeeMapper.toDto(employee);
+    log.info("DTO 변환 결과: id={}, 부서명={}, 부서ID={}",
+        dto.getId(), dto.getDepartmentName(), dto.getDepartmentId());
+    return dto;
   }
 
   @Override
@@ -165,6 +189,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     return "직원이 성공적으로 삭제되었습니다.";
   }
 
+  @Transactional(readOnly = true)
   @Override
   public CursorPageResponseDto<EmployeeResponseDto> getEmployeesWithCursor(
       String nameOrEmail, String employeeNumber, String departmentName,
@@ -256,8 +281,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 
   // Get or Throw
   private Employee getByIdOrThrow(Integer id) {
-    return employeeRepository.findById(id).orElseThrow(() ->
-        new RestApiException(EmployeeErrorCode.EMPLOYEE_NOT_FOUND, "id=" + id));
+    Employee employee = employeeRepository.findEmployeeByIdWithDepartment(id);
+    if (employee == null) {
+      throw new RestApiException(EmployeeErrorCode.EMPLOYEE_NOT_FOUND, "id=" + id);
+    }
+    return employee;
   }
 
   private Department getDepartmentOrThrow(Integer departmentId) {

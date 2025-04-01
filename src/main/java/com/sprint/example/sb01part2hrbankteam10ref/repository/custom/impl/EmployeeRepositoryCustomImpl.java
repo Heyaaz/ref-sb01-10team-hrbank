@@ -1,7 +1,5 @@
 package com.sprint.example.sb01part2hrbankteam10ref.repository.custom.impl;
 
-import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.QueryFactory;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -10,7 +8,6 @@ import com.sprint.example.sb01part2hrbankteam10ref.entity.Employee.EmployeeStatu
 import com.sprint.example.sb01part2hrbankteam10ref.entity.QEmployee;
 import com.sprint.example.sb01part2hrbankteam10ref.repository.custom.EmployeeRepositoryCustom;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -34,6 +31,14 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
     boolean isAscending = "asc".equalsIgnoreCase(sortDirection);
 
     Integer cursorId = null;
+    if (idAfter != null) {
+      cursorId = idAfter;
+    } else if (StringUtils.hasText(cursor)) {
+      try {
+        cursorId = Integer.parseInt(cursor);
+      } catch (NumberFormatException e) {
+      }
+    }
 
     // 기본 검색 조건
     BooleanExpression nameOrEmailCondition = getNameOrEmailCondition(employee, nameOrEmail);
@@ -42,9 +47,8 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
     BooleanExpression positionCondition = getPositionCondition(employee, position);
     BooleanExpression statusCondition = getStatusCondition(employee, status);
     BooleanExpression hireDateCondition = getHireDateCondition(employee, hireDateFrom, hireDateTo);
-
-    // 커서 조건 구성
     BooleanExpression cursorCondition = getCursorCondition(employee, cursorId, isAscending);
+
 
     // 조건들 결합
     BooleanExpression whereCondition = combineConditions(nameOrEmailCondition, employeeNumberCondition
@@ -53,6 +57,7 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
     // 쿼리 생성 및 실행
     return queryFactory
         .selectFrom(employee)
+        .leftJoin(employee.department).fetchJoin()
         .where(whereCondition)
         .orderBy(getOrderSpecifier(employee, sortField, isAscending))
         .limit(size)
@@ -72,7 +77,7 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
     if (!StringUtils.hasText(employeeNumber)) {
       return null;
     }
-    return employee.employeeNumber.toLowerCase().like("%" + employee.employeeNumber + "%");
+    return employee.employeeNumber.toLowerCase().like("%" + employeeNumber.toLowerCase() + "%");
   }
 
   private BooleanExpression getDepartmentCondition(QEmployee employee, String departmentName) {
@@ -151,27 +156,14 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
     }
   }
 
-
-
   @Override
-  public List<Employee> findByNameAndEmployeeNumberAndHireDate(String name, String employeeNumber,
-      LocalDateTime hireDate) {
-
+  public Employee findEmployeeByIdWithDepartment(Integer id) {
     QEmployee employee = QEmployee.employee;
-    BooleanBuilder builder = new BooleanBuilder();
 
-    if (name != null && !name.isEmpty()) {
-      builder.and(employee.name.like("%" + name + "%"));
-    }
-    if (employeeNumber != null && !employeeNumber.isEmpty()) {
-      builder.and(employee.employeeNumber.like("%" + employeeNumber + "%"));
-    }
-    if (hireDate != null) {
-      builder.and(employee.hireDate.eq(hireDate));
-    }
     return queryFactory
         .selectFrom(employee)
-        .where(builder)
-        .fetch();
+        .leftJoin(employee.department).fetchJoin()
+        .where(employee.id.eq(id))
+        .fetchOne();
   }
 }

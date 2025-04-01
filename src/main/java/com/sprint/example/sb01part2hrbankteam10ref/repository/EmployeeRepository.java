@@ -4,6 +4,7 @@ import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeDistribu
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeTrendDto;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.Employee;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.Employee.EmployeeStatus;
+import com.sprint.example.sb01part2hrbankteam10ref.repository.custom.EmployeeRepositoryCustom;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Integer>,
-    JpaSpecificationExecutor<Employee> {
+    JpaSpecificationExecutor<Employee>, EmployeeRepositoryCustom {
 
   boolean existsByEmail(String email);
 

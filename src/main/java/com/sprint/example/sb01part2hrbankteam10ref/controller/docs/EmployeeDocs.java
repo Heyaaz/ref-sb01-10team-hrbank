@@ -103,53 +103,53 @@ public interface EmployeeDocs {
             @Parameter(description = "직원 ID") @PathVariable Integer id
     );
 
-    @Operation(summary = "직원 목록 조회", description = "직원 목록을 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = CursorPageResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청",
-                    content = @Content(examples = @ExampleObject(value = ""))),
-            @ApiResponse(responseCode = "500", description = "서버 오류",
-                    content = @Content(examples = @ExampleObject(value = "{ 'error': '담당자에게 문의해주세요.' }")))
-    })
-    @GetMapping
-    ResponseEntity<CursorPageResponseDto<EmployeeDto>> getListEmployee(
-            @Parameter(description = "직원 이름 또는 이메일", example = "홍길동")
-            @RequestParam(required = false) String nameOrEmail,
-
-            @Parameter(description = "사원 번호", example = "EMP-2023-001")
-            @RequestParam(required = false) String employeeNumber,
-
-            @Parameter(description = "부서 이름", example = "개발팀")
-            @RequestParam(required = false) String departmentName,
-
-            @Parameter(description = "직함", example = "선임 개발자")
-            @RequestParam(required = false) String position,
-
-            @Parameter(description = "입사일 시작", example = "2023-01-01")
-            @RequestParam(required = false) LocalDate hireDateFrom,
-
-            @Parameter(description = "입사일 종료", example = "2023-01-01")
-            @RequestParam(required = false) LocalDate hireDateTo,
-
-            @Parameter(description = "상태", example = "ACTIVE, ON_LEAVE, RESIGNED")
-            @RequestParam(required = false)Employee.EmployeeStatus status,
-
-            @Parameter(description = "이전 페이지의 마지막 요소 ID")
-            @RequestParam(required = false) Integer idAfter,
-
-            @Parameter(description = "커서")
-            @RequestParam(required = false) String cursor,
-
-            @Parameter(description = "페이지 크기", example = "10")
-            @RequestParam(required = false, defaultValue = "10") Integer size,
-
-            @Parameter(description = "정렬 필드 (name, employeeNumber, hireDate)", example = "name")
-            @RequestParam(required = false, defaultValue = "name") String sortField,
-
-            @Parameter(description = "정렬 방향 (asc 또는 desc, 기본값: asc)", example = "asc")
-            @RequestParam(required = false, defaultValue = "asc") String sortDirection
-            );
+//    @Operation(summary = "직원 목록 조회", description = "직원 목록을 조회합니다.")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "조회 성공",
+//            content = @Content(schema = @Schema(implementation = CursorPageResponseDto.class))),
+//            @ApiResponse(responseCode = "400", description = "잘못된 요청",
+//                    content = @Content(examples = @ExampleObject(value = ""))),
+//            @ApiResponse(responseCode = "500", description = "서버 오류",
+//                    content = @Content(examples = @ExampleObject(value = "{ 'error': '담당자에게 문의해주세요.' }")))
+//    })
+//    @GetMapping
+//    ResponseEntity<CursorPageResponseDto<EmployeeDto>> getListEmployee(
+//            @Parameter(description = "직원 이름 또는 이메일", example = "홍길동")
+//            @RequestParam(required = false) String nameOrEmail,
+//
+//            @Parameter(description = "사원 번호", example = "EMP-2023-001")
+//            @RequestParam(required = false) String employeeNumber,
+//
+//            @Parameter(description = "부서 이름", example = "개발팀")
+//            @RequestParam(required = false) String departmentName,
+//
+//            @Parameter(description = "직함", example = "선임 개발자")
+//            @RequestParam(required = false) String position,
+//
+//            @Parameter(description = "입사일 시작", example = "2023-01-01")
+//            @RequestParam(required = false) LocalDate hireDateFrom,
+//
+//            @Parameter(description = "입사일 종료", example = "2023-01-01")
+//            @RequestParam(required = false) LocalDate hireDateTo,
+//
+//            @Parameter(description = "상태", example = "ACTIVE, ON_LEAVE, RESIGNED")
+//            @RequestParam(required = false)Employee.EmployeeStatus status,
+//
+//            @Parameter(description = "이전 페이지의 마지막 요소 ID")
+//            @RequestParam(required = false) Integer idAfter,
+//
+//            @Parameter(description = "커서")
+//            @RequestParam(required = false) String cursor,
+//
+//            @Parameter(description = "페이지 크기", example = "10")
+//            @RequestParam(required = false, defaultValue = "10") Integer size,
+//
+//            @Parameter(description = "정렬 필드 (name, employeeNumber, hireDate)", example = "name")
+//            @RequestParam(required = false, defaultValue = "name") String sortField,
+//
+//            @Parameter(description = "정렬 방향 (asc 또는 desc, 기본값: asc)", example = "asc")
+//            @RequestParam(required = false, defaultValue = "asc") String sortDirection
+//            );
 
     @Operation(summary = "직원 분포 조회", description = "지정된 기준으로 그룹화된 직원 분포를 조회합니다.")
     @ApiResponses(value = {

@@ -1,11 +1,11 @@
 package com.sprint.example.sb01part2hrbankteam10ref.controller.api;
 
 import com.sprint.example.sb01part2hrbankteam10ref.controller.docs.EmployeeDocs;
+import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeResponseDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.page.CursorPageResponseDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeCreateRequest;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeDistributionDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeDto;
-import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeSearchRequest;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeTrendDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeUpdateRequest;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.Employee.EmployeeStatus;
@@ -87,28 +87,27 @@ public class EmployeeController implements EmployeeDocs {
   }
 
   @GetMapping
-  @Override
-  public ResponseEntity<CursorPageResponseDto<EmployeeDto>> getListEmployee(
+  public ResponseEntity<CursorPageResponseDto<EmployeeResponseDto>> getListEmployee(
       @RequestParam(name = "nameOrEmail", required = false) String nameOrEmail,
       @RequestParam(name = "employeeNumber", required = false) String employeeNumber,
       @RequestParam(name = "departmentName", required = false) String departmentName,
       @RequestParam(name = "position", required = false) String position,
-      @RequestParam(name = "hireDateFrom", required = false) LocalDate hireDateFrom,
-      @RequestParam(name = "hireDateTo", required = false) LocalDate hireDateTo,
       @RequestParam(name = "status", required = false) EmployeeStatus status,
+      @RequestParam(name = "hireDateFrom", required = false)
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hireDateFrom,
+      @RequestParam(name = "hireDateTo", required = false)
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hireDateTo,
       @RequestParam(name = "idAfter", required = false) Integer idAfter,
       @RequestParam(name = "cursor", required = false) String cursor,
       @RequestParam(name = "size", required = false, defaultValue = "10") Integer size,
       @RequestParam(name = "sortField", required = false, defaultValue = "name") String sortField,
       @RequestParam(name = "sortDirection", required = false, defaultValue = "asc") String sortDirection
   ) {
-    EmployeeSearchRequest request = new EmployeeSearchRequest(
-        nameOrEmail, employeeNumber, departmentName, position,
-        hireDateFrom, hireDateTo, status, idAfter, cursor, size, sortField, sortDirection
-    );
-
+    // nameAndEmployeeNumberAndHireDate 검색어는 그대로 유지하면서 추가 파라미터 전달
     return ResponseEntity.ok()
-        .body(employeeService.getAllByQuery(request));
+        .body(employeeService.getEmployeesWithCursor(
+            nameOrEmail, employeeNumber, departmentName, position, status,
+            hireDateFrom, hireDateTo, idAfter, cursor, size, sortField, sortDirection));
   }
 
   @GetMapping("/stats/distribution")

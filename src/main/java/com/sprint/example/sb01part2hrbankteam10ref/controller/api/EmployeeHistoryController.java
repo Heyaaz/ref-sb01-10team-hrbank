@@ -1,12 +1,16 @@
 package com.sprint.example.sb01part2hrbankteam10ref.controller.api;
 
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee_history.ChangeLogDto;
-import com.sprint.example.sb01part2hrbankteam10ref.dto.employee_history.CursorPageResponseChangeLogDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee_history.DiffDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeHistoryCreateRequest;
+import com.sprint.example.sb01part2hrbankteam10ref.dto.employee_history.EmployeeHistoryResponseDto;
+import com.sprint.example.sb01part2hrbankteam10ref.dto.page.CursorPageResponseDto;
+import com.sprint.example.sb01part2hrbankteam10ref.entity.EmployeeHistory.ChangeType;
 import com.sprint.example.sb01part2hrbankteam10ref.service.EmployeeHistoryService;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,23 +41,23 @@ public class EmployeeHistoryController {
     }
 
     @GetMapping
-    public ResponseEntity<CursorPageResponseChangeLogDto<ChangeLogDto>> getEmployeeHistories(
+    public ResponseEntity<CursorPageResponseDto<EmployeeHistoryResponseDto>> getEmployeeHistories(
             @RequestParam(required = false) String employeeNumber,
-            @RequestParam(required = false) String type,
+            @RequestParam(required = false) ChangeType type,
             @RequestParam(required = false) String memo,
             @RequestParam(required = false) String ipAddress,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime atFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime atTo,
+            @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime atFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime atTo,
             @RequestParam(required = false) Integer idAfter,
+            @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "at") String sortField,
+            @RequestParam(defaultValue = "sortField") String sortField,
             @RequestParam(defaultValue = "desc") String sortDirection) {
 
-        CursorPageResponseChangeLogDto<ChangeLogDto> response =
-                employeeHistoryService.getEmployeeHistoriesByCursor(
-                        employeeNumber, type, memo, ipAddress, atFrom, atTo, idAfter, size, sortField, sortDirection);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok()
+            .body(employeeHistoryService.getEmployeeHistoriesWithCursor(
+                employeeNumber, type, memo, ipAddress, atFrom, atTo, idAfter, cursor, size, sortField, sortDirection
+            ));
     }
 
     @GetMapping("/{id}/diffs")
@@ -65,13 +69,13 @@ public class EmployeeHistoryController {
     @GetMapping("/count")
     public ResponseEntity<Long> countEmployeeHistories(
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate fromDate,
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate toDate
     ) {
 
-        LocalDateTime defaultFromDate = (fromDate != null) ? fromDate : LocalDateTime.now().minusDays(7);
-        LocalDateTime defaultToDate = (toDate != null) ? toDate : LocalDateTime.now();
+        LocalDate defaultFromDate = (fromDate != null) ? fromDate : LocalDate.now().minusDays(7);
+        LocalDate defaultToDate = (toDate != null) ? toDate : LocalDate.now();
 
         Long count = employeeHistoryService.countEmployeeHistories(defaultFromDate, defaultToDate);
 

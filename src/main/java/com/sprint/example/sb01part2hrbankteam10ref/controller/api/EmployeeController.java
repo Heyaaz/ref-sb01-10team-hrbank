@@ -98,7 +98,7 @@ public class EmployeeController {
       @RequestParam(name = "sortField", required = false, defaultValue = "name") String sortField,
       @RequestParam(name = "sortDirection", required = false, defaultValue = "asc") String sortDirection
   ) {
-    // nameAndEmployeeNumberAndHireDate 검색어는 그대로 유지하면서 추가 파라미터 전달
+
     return ResponseEntity.ok()
         .body(employeeService.getEmployeesWithCursor(
             nameOrEmail, employeeNumber, departmentName, position, status,

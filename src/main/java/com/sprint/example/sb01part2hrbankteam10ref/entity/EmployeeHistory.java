@@ -1,7 +1,9 @@
 package com.sprint.example.sb01part2hrbankteam10ref.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -47,6 +49,7 @@ public class EmployeeHistory {
 
   @CreatedDate
   @Column(name = "logged_at", columnDefinition = "timestamp with time zone", nullable = false, updatable = false)
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime loggedAt;
 
   @Builder

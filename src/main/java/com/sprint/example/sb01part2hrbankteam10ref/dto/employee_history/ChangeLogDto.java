@@ -1,6 +1,7 @@
 package com.sprint.example.sb01part2hrbankteam10ref.dto.employee_history;
 
 import com.sprint.example.sb01part2hrbankteam10ref.entity.EmployeeHistory;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -14,7 +15,7 @@ public class ChangeLogDto {
     private String type;
     private String memo;
     private String ipAddress;
-    private LocalDateTime at;
+    private LocalDate at;
 
     // EmployeeHistory 객체를 받아서 ChangeLogDto로 변환
     public static ChangeLogDto fromEntity(EmployeeHistory history) {
@@ -24,7 +25,7 @@ public class ChangeLogDto {
                 history.getType().name(),
                 history.getMemo(),
                 history.getIpAddress(),
-                history.getLoggedAt()
+                history.getLoggedAt().toLocalDate()
         );
     }
 }

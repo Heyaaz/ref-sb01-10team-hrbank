@@ -4,12 +4,16 @@ import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee_history.ChangeLogDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee_history.CursorPageResponseChangeLogDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee_history.DiffDto;
+import com.sprint.example.sb01part2hrbankteam10ref.dto.employee_history.EmployeeHistoryResponseDto;
+import com.sprint.example.sb01part2hrbankteam10ref.dto.page.CursorPageResponseDto;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.EmployeeHistory;
+import com.sprint.example.sb01part2hrbankteam10ref.entity.EmployeeHistory.ChangeType;
 import com.sprint.example.sb01part2hrbankteam10ref.global.exception.RestApiException;
 import com.sprint.example.sb01part2hrbankteam10ref.global.exception.errorcode.EmployeeHistoryErrorCode;
 import com.sprint.example.sb01part2hrbankteam10ref.mapper.EmployeeHistoryMapper;
 import com.sprint.example.sb01part2hrbankteam10ref.repository.EmployeeHistoryRepository;
 import com.sprint.example.sb01part2hrbankteam10ref.service.EmployeeHistoryService;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.Base64;
 import java.util.stream.Collectors;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -43,101 +48,78 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public CursorPageResponseChangeLogDto getEmployeeHistoriesByCursor(
-            String employeeNumber,
-            String type,
-            String memo,
-            String ipAddress,
-            LocalDateTime atFrom,
-            LocalDateTime atTo,
-            Integer idAfter,
-            int size,
-            String sortField,
-            String sortDirection
-    ) {
-        if (!"at".equalsIgnoreCase(sortField) && !"ipAddress".equalsIgnoreCase(sortField)) {
-            throw new RestApiException(
-                    EmployeeHistoryErrorCode.INVALID_SORT_FIELD,
-                    "잘못된 요청 또는 지원하지 않는 정렬 필드입니다."
-            );
-        }
+    public CursorPageResponseDto getEmployeeHistoriesWithCursor(String employeeNumber,
+        ChangeType type, String memo, String ipAddress, LocalDateTime atFrom, LocalDateTime atTo,
+        Integer idAfter, String cursor, int size, String sortField, String sortDirection) {
 
-        // 1. 동적 조건 생성
-        Specification<EmployeeHistory> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
+        try {
+            // 1. 정렬 방향 설정
+            boolean isAscending = "asc".equalsIgnoreCase(sortDirection);
 
-            if (employeeNumber != null && !employeeNumber.isEmpty()) {
-                predicates.add(cb.like(root.get("employeeNumber"), "%" + employeeNumber + "%"));
-            }
-            if (type != null && !type.isEmpty()) {
-                try {
-                    EmployeeHistory.ChangeType changeType = EmployeeHistory.ChangeType.valueOf(type);
-                    predicates.add(cb.equal(root.get("type"), changeType));
-                } catch (IllegalArgumentException e) {
-                    // 잘못된 유형이면 조건 무시 또는 예외 처리
-                }
-            }
-            if (memo != null && !memo.isEmpty()) {
-                predicates.add(cb.like(root.get("memo"), "%" + memo + "%"));
-            }
-            if (ipAddress != null && !ipAddress.isEmpty()) {
-                predicates.add(cb.like(root.get("ipAddress"), "%" + ipAddress + "%"));
-            }
-            if (atFrom != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("modifiedAt"), atFrom));
-            }
-            if (atTo != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("modifiedAt"), atTo));
-            }
+            // 2. 커서 처리
+            Integer cursorId = null;
             if (idAfter != null) {
-                if ("desc".equalsIgnoreCase(sortDirection)) {
-                    predicates.add(cb.lessThan(root.get("id"), idAfter));
-                } else {
-                    predicates.add(cb.greaterThan(root.get("id"), idAfter));
+                cursorId = idAfter;
+            } else if (StringUtils.hasText(cursor)) {
+                try {
+                    cursorId = Integer.parseInt(cursor);
+                } catch (NumberFormatException e) {
+                    log.warn("유효하지 않은 커서 값 : {}",cursor);
                 }
             }
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
 
-        // 2. 정렬 및 페이지네이션 설정
-        String entitySortField = sortField.equals("at") ? "modifiedAt" : sortField;
-        Sort sort = "asc".equalsIgnoreCase(sortDirection)
-                ? Sort.by(entitySortField).ascending()
-                : Sort.by(entitySortField).descending();
-        Pageable pageable = PageRequest.of(0, size + 1, sort);
+            // 3. 전체 레코드 수 조회
+            Long totalCount = employeeHistoryRepository.countEmployeeHistories(
+                employeeNumber, type, memo, ipAddress, atFrom, atTo
+            );
 
-        Page<EmployeeHistory> pageResult = employeeHistoryRepository.findAll(spec, pageable);
-        List<EmployeeHistory> histories = pageResult.getContent();
+            // 4. QueryDSL을 사용하여 쿼리 생성
+            List<EmployeeHistory> employeeHistories = employeeHistoryRepository.findEmployeeHistoryWithCursor(
+                    employeeNumber, type, memo, ipAddress, atFrom, atTo, cursorId, cursor, size,
+                    sortField, sortDirection
+            );
 
-        // 3. 다음 페이지 존재 여부 판단
-        boolean hasNext = histories.size() > size;
-        if (hasNext) {
-            histories = histories.subList(0, size);
+            // 5. Dto 변환
+            List<EmployeeHistoryResponseDto> responseDtos = employeeHistories.stream()
+                .map(employeeHistory -> {
+                    return EmployeeHistoryResponseDto.builder()
+                        .id(employeeHistory.getId())
+                        .employeeNumber(employeeHistory.getEmployeeNumber())
+                        .type(employeeHistory.getType())
+                        .memo(employeeHistory.getMemo())
+                        .ipAddress(employeeHistory.getIpAddress())
+                        .at(employeeHistory.getLoggedAt())
+                        .build();
+                }).collect(Collectors.toList());
+
+            // 6. 다음 커서 값 설정
+            String nextCursor = null;
+            Long nextIdAfterValue = null;
+            boolean hasNextValue = false;
+
+            if(!employeeHistories.isEmpty() && employeeHistories.size() >= size) {
+                EmployeeHistory lastHistory = employeeHistories.get(employeeHistories.size() -1);
+                nextCursor = String.valueOf(lastHistory.getId());
+                nextIdAfterValue = Long.valueOf(lastHistory.getId());
+                hasNextValue = true;
+            }
+
+            // 7. 응답 생성 - totalElements를 실제 전체 개수로 설정
+            CursorPageResponseDto<EmployeeHistoryResponseDto> response = CursorPageResponseDto.<EmployeeHistoryResponseDto>builder()
+                .content(responseDtos)
+                .nextCursor(nextCursor)
+                .nextIdAfter(nextIdAfterValue)
+                .size(responseDtos.size())
+                .totalElements(totalCount)
+                .hasNext(hasNextValue)
+                .build();
+
+            return response;
+
+        } catch (Exception e) {
+            throw e;
         }
 
-        // 4. ChangeLogDto로 변환 (Mapper 메서드를 사용)
-        List<ChangeLogDto> content = histories.stream()
-                .map(EmployeeHistoryMapper::toChangeLogDto)
-                .collect(Collectors.toList());
-
-        // 5. 다음 페이지 커서 계산
-        Integer nextIdAfter = null;
-        String nextCursor = null;
-        if (hasNext) {
-            EmployeeHistory nextHistory = pageResult.getContent().get(size);
-            nextIdAfter = nextHistory.getId();
-            nextCursor = Base64.getEncoder().encodeToString(("{\"id\":" + nextIdAfter + "}").getBytes());
-        }
-
-        // 6. 전체 건수 조회
-        long totalElements = employeeHistoryRepository.count(spec);
-
-        // 7. 응답 DTO 구성
-        CursorPageResponseChangeLogDto<ChangeLogDto> response =
-                new CursorPageResponseChangeLogDto<>(content, nextCursor, nextIdAfter, size, totalElements, hasNext);
-
-        return response;
     }
 
 
@@ -153,7 +135,7 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
 
 @Override
 @Transactional(readOnly = true)
-public Long countEmployeeHistories(LocalDateTime fromDate, LocalDateTime toDate) {
+public Long countEmployeeHistories(LocalDate fromDate, LocalDate toDate) {
     return employeeHistoryRepository.countByModifiedAtBetween(fromDate, toDate);
 }
 

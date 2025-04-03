@@ -18,5 +18,5 @@ public interface EmployeeHistoryRepository extends JpaRepository<EmployeeHistory
 
   Long countByLoggedAtBetween(LocalDate fromDate, LocalDate toDate);
 
-  Long countByModifiedAtBetween(LocalDate modifiedAtAfter, LocalDate modifiedAtBefore);
+  Long countByModifiedAtBetween(LocalDateTime modifiedAtAfter, LocalDateTime modifiedAtBefore);
 }

@@ -33,5 +33,5 @@ public interface EmployeeHistoryService {
 
     List<DiffDto> getChangeDiffs(Integer id);
 
-    Long countEmployeeHistories(LocalDate fromDate, LocalDate toDate);
+    Long countEmployeeHistories(LocalDateTime fromDate, LocalDateTime toDate);
 }

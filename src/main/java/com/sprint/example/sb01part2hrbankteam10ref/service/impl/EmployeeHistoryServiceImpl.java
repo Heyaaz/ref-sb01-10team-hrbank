@@ -135,7 +135,7 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
 
 @Override
 @Transactional(readOnly = true)
-public Long countEmployeeHistories(LocalDate fromDate, LocalDate toDate) {
+public Long countEmployeeHistories(LocalDateTime fromDate, LocalDateTime toDate) {
     return employeeHistoryRepository.countByModifiedAtBetween(fromDate, toDate);
 }
 

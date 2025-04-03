@@ -2,7 +2,9 @@ package com.sprint.example.sb01part2hrbankteam10ref.controller.api;
 
 import com.sprint.example.sb01part2hrbankteam10ref.dto.backup.BackupDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.backup.CursorPageResponseBackupDto;
+import com.sprint.example.sb01part2hrbankteam10ref.dto.page.CursorPageResponseDto;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.Backup;
+import com.sprint.example.sb01part2hrbankteam10ref.entity.Backup.BackupStatus;
 import com.sprint.example.sb01part2hrbankteam10ref.mapper.BackupMapper;
 import com.sprint.example.sb01part2hrbankteam10ref.repository.BackupRepository;
 import com.sprint.example.sb01part2hrbankteam10ref.service.BackupService;
@@ -54,45 +56,22 @@ public class BackupController{
 
     // 백업 목록 조회
     @GetMapping
-    public ResponseEntity<CursorPageResponseBackupDto> getBackupList(
+    public ResponseEntity<CursorPageResponseDto> getBackupList(
             @RequestParam(required = false) String worker,
-            @RequestParam(required = false) Backup.BackupStatus status,
-            @RequestParam(required = false) String startedAtFrom,
-            @RequestParam(required = false) String startedAtTo,
-            @RequestParam(required = false) Integer binaryContentId,
+            @RequestParam(required = false) BackupStatus status,
+            @RequestParam(required = false) LocalDateTime startedAtFrom,
+            @RequestParam(required = false) LocalDateTime startedAtTo,
+            @RequestParam(value = "fileId", required = false) Integer binaryContentId,
             @RequestParam(required = false) Integer idAfter,
+            @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "startedAt") String sortField,
-            @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection) {
+            @RequestParam(defaultValue = "DESC") String sortDirection) {
 
-        Pageable pageable = PageRequest.of(0, size, Sort.by(sortDirection, sortField));
-        LocalDateTime startFrom = startedAtFrom != null ?
-                LocalDateTime.parse(startedAtFrom, DateTimeFormatter.ISO_DATE_TIME) : null;
-        LocalDateTime startTo = startedAtTo != null ?
-                LocalDateTime.parse(startedAtTo, DateTimeFormatter.ISO_DATE_TIME) : null;
-        Page<BackupDto> backupPage = backupService.getBackupList(worker, status, startFrom, startTo, binaryContentId, idAfter, null, size, sortField, sortDirection);
 
-        List<BackupDto> content = backupPage.getContent();
-        String nextCursor = backupPage.hasNext() && !content.isEmpty() ?
-                encodeCursor(content.get(content.size() - 1)) : null;
-        Integer nextIdAfter = content.isEmpty() ? null : content.get(content.size() - 1).getId();
-
-        CursorPageResponseBackupDto response = CursorPageResponseBackupDto.builder()
-                .content(content)
-                .nextCursor(nextCursor)
-                .nextIdAfter(nextIdAfter)
-                .size(backupPage.getSize())
-                .totalElements((int) backupPage.getTotalElements())
-                .hasNext(backupPage.hasNext())
-                .build();
-
-        return ResponseEntity.ok(response);
-    }
-    private String encodeCursor(BackupDto backupDto) {
-        if (backupDto == null || backupDto.getId() == null) {
-            throw new IllegalArgumentException("Invalid cursor data");
-        }
-        return Base64.getEncoder().encodeToString((backupDto.getId().toString()).getBytes());
+        return ResponseEntity.ok()
+            .body(backupService.getBackupList(worker, status, startedAtFrom, startedAtTo,
+               binaryContentId, idAfter, cursor, size, sortField, sortDirection));
     }
 }
 

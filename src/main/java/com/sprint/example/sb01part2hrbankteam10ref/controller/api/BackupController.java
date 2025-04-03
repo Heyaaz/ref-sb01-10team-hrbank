@@ -1,7 +1,6 @@
 package com.sprint.example.sb01part2hrbankteam10ref.controller.api;
 
 import com.sprint.example.sb01part2hrbankteam10ref.dto.backup.BackupDto;
-import com.sprint.example.sb01part2hrbankteam10ref.dto.backup.CursorPageResponseBackupDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.page.CursorPageResponseDto;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.Backup;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.Backup.BackupStatus;
@@ -10,18 +9,11 @@ import com.sprint.example.sb01part2hrbankteam10ref.repository.BackupRepository;
 import com.sprint.example.sb01part2hrbankteam10ref.service.BackupService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Base64;
-import java.util.List;
 
 @RestController
 @RequestMapping("api/backups")

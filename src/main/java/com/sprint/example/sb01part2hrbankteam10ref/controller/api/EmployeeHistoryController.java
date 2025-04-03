@@ -54,6 +54,7 @@ public class EmployeeHistoryController {
             @RequestParam(defaultValue = "sortField") String sortField,
             @RequestParam(defaultValue = "desc") String sortDirection) {
 
+
         return ResponseEntity.ok()
             .body(employeeHistoryService.getEmployeeHistoriesWithCursor(
                 employeeNumber, type, memo, ipAddress, atFrom, atTo, idAfter, cursor, size, sortField, sortDirection
@@ -69,13 +70,13 @@ public class EmployeeHistoryController {
     @GetMapping("/count")
     public ResponseEntity<Long> countEmployeeHistories(
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate fromDate,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate toDate
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate
     ) {
 
-        LocalDate defaultFromDate = (fromDate != null) ? fromDate : LocalDate.now().minusDays(7);
-        LocalDate defaultToDate = (toDate != null) ? toDate : LocalDate.now();
+        LocalDateTime defaultFromDate = (fromDate != null) ? fromDate : LocalDateTime.now().minusDays(7);
+        LocalDateTime defaultToDate = (toDate != null) ? toDate : LocalDateTime.now();
 
         Long count = employeeHistoryService.countEmployeeHistories(defaultFromDate, defaultToDate);
 

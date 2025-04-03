@@ -1,8 +1,10 @@
 package com.sprint.example.sb01part2hrbankteam10ref.service.impl;
 
 import com.sprint.example.sb01part2hrbankteam10ref.dto.backup.BackupDto;
+import com.sprint.example.sb01part2hrbankteam10ref.dto.backup.BackupResponseDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.backup.EmployeeForBackupDto;
 import com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeDto;
+import com.sprint.example.sb01part2hrbankteam10ref.dto.page.CursorPageResponseDto;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.Backup;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.Backup.BackupStatus;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.BinaryContent;
@@ -10,6 +12,7 @@ import com.sprint.example.sb01part2hrbankteam10ref.entity.Employee;
 import com.sprint.example.sb01part2hrbankteam10ref.global.exception.RestApiException;
 import com.sprint.example.sb01part2hrbankteam10ref.global.exception.errorcode.BackupErrorCode;
 import com.sprint.example.sb01part2hrbankteam10ref.global.exception.errorcode.BinaryContentErrorCode;
+import com.sprint.example.sb01part2hrbankteam10ref.mapper.BackupMapper;
 import com.sprint.example.sb01part2hrbankteam10ref.mapper.EmployeeMapper;
 import com.sprint.example.sb01part2hrbankteam10ref.repository.BackupRepository;
 import com.sprint.example.sb01part2hrbankteam10ref.repository.BinaryContentRepository;
@@ -20,6 +23,7 @@ import com.sprint.example.sb01part2hrbankteam10ref.storage.BinaryContentStorage;
 import com.sprint.example.sb01part2hrbankteam10ref.util.IpUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -49,6 +53,7 @@ import static org.apache.commons.lang3.StringEscapeUtils.escapeCsv;
 
 // ID,직원번호,이름,이메일,부서,직급,입사일,상태
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -383,92 +388,72 @@ public class BackupServiceImpl implements BackupService {
     return employeeForBackupDtoList;
   }
 
-  // 서비스 클래스의 getBackupList 메서드 수정
   @Override
-  public Page<BackupDto> getBackupList(
-          String workerIpAddress,
-          Backup.BackupStatus status,
-          LocalDateTime startedAtFrom,
-          LocalDateTime startedAtTo,
-          Integer fileId,
-          Integer idAfter,
-          String cursor,
-          int size,
-          String sortField,
-          Sort.Direction sortDirection) {
+  public CursorPageResponseDto<BackupResponseDto> getBackupList(String workerIpAddress,
+      BackupStatus status, LocalDateTime startedAtFrom, LocalDateTime startedAtTo, Integer fileId,
+      Integer idAfter, String cursor, int size, String sortField, String sortDirection) {
 
-    // 커서가 주어진 경우 이를 idAfter로 변환
-    if (cursor != null && !cursor.isEmpty()) {
-      try {
-        // Base64 디코딩을 통한 ID 추출
-        byte[] decodedBytes = Base64.getDecoder().decode(cursor);
-        String decodedId = new String(decodedBytes);
-        idAfter = Integer.valueOf(decodedId);
-      } catch (Exception e) {
-        // 예외 처리: 잘못된 커서 형식
-        throw new IllegalArgumentException("커서 형식이 잘못됐습니다.");
+    try {
+      // 1. 정렬 방향 설정
+      boolean isAscending = "asc".equalsIgnoreCase(sortDirection);
+
+      // 2. 커서 처리
+      Integer cursorId = null;
+      if (idAfter != null) {
+        cursorId = idAfter;
+      } else if (cursor != null && !cursor.isEmpty()) {
+        try {
+          cursorId = Integer.parseInt(cursor);
+        } catch (NumberFormatException e) {
+          log.warn("유효하지 않은 커서 값: {}", cursor);
+        }
       }
+
+      // 3. QueryDSL을 사용하여 쿼리 생성
+      List<Backup> backups = backupRepository.findBackupsWithCursor(
+              startedAtFrom, startedAtTo, workerIpAddress, status, cursorId, cursor, size,
+              sortField, sortDirection
+      );
+
+      // 4. Dto 변환
+      List<BackupResponseDto> responseDtos = backups.stream()
+              .map(backup -> {
+                BackupDto dto = BackupMapper.toDto(backup);
+                return BackupResponseDto.builder()
+                    .id(dto.getId())
+                    .status(dto.getStatus())
+                    .startedAt(dto.getStartedAt())
+                    .endedAt(dto.getEndedAt())
+                    .worker(dto.getWorker())
+                    .fileId(dto.getFileId())
+                    .build();
+              }).collect(Collectors.toList());
+
+      // 5. 다음 커서 값 설정
+      String nextCursor = null;
+      Long nextIdAfterValue = null;
+      boolean hasNextValue = false;
+
+      if (!backups.isEmpty() && backups.size() >= size) {
+        Backup lastBackup = backups.get(backups.size() - 1);
+        nextCursor = String.valueOf(lastBackup.getId());
+        nextIdAfterValue = Long.valueOf(lastBackup.getId());
+        hasNextValue = true;
+      }
+
+      // 6. 응답 생성
+      CursorPageResponseDto<BackupResponseDto> response = CursorPageResponseDto.<BackupResponseDto>builder()
+          .content(responseDtos)
+          .nextCursor(nextCursor)
+          .nextIdAfter(nextIdAfterValue)
+          .hasNext(hasNextValue)
+          .size(responseDtos.size())
+          .totalElements((long) backupRepository.count())
+          .build();
+      return response;
+    } catch (Exception e) {
+      throw e;
     }
-    final Integer finalIdAfter = idAfter;
 
-    // 커서 기반 페이징을 위한 Pageable 객체 (페이지 번호는 항상 0)
-    Pageable basePageable = PageRequest.of(0, size);
-
-    // Specification 생성
-    Specification<Backup> spec = Specification.where(null);
-
-    // 검색 조건으로 조회
-    if (workerIpAddress != null) {
-      spec = spec.and((root, query, cb) -> cb.equal(root.get("workerIpAddress"), workerIpAddress));
-    }
-
-    if (status != null) {
-      spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
-    }
-
-    if (startedAtFrom != null) {
-      spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("startedAt"), startedAtFrom));
-    }
-
-    if (startedAtTo != null) {
-      spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("startedAt"), startedAtTo));
-    }
-
-    if (idAfter != null) {
-      spec = spec.and((root, query, cb) -> cb.greaterThan(root.get("id"), finalIdAfter));
-    }
-
-    // 정렬 설정
-    Sort sort;
-    if ("startedAt".equals(sortField)) {
-      // 시작 시간 기준 정렬 시, 시작 시간이 null인 경우 ID로 정렬
-      // ID 정렬 방향도 주 정렬 방향과 동일하게 설정
-      sort = Sort.by(sortDirection, "startedAt").and(Sort.by(sortDirection, "id"));
-    } else if ("id".equals(sortField)) {
-      sort = Sort.by(sortDirection, "id");
-    } else if ("endedAt".equals(sortField)) {
-      // 종료 시간 기준 정렬 시, 종료 시간이 null인 경우 ID로 정렬
-      // ID 정렬 방향도 주 정렬 방향과 동일하게 설정
-      sort = Sort.by(sortDirection, "endedAt").and(Sort.by(sortDirection, "id"));
-    } else {
-      // 기본 정렬: 시작 시간 내림차순, 시작 시간이 null인 경우 ID도 내림차순
-      sort = Sort.by(Sort.Direction.DESC, "startedAt").and(Sort.by(Sort.Direction.DESC, "id"));
-    }
-
-    // 페이징 설정
-    Pageable pageable = PageRequest.of(basePageable.getPageNumber(), basePageable.getPageSize(), sort);
-
-    // 결과 조회
-    Page<Backup> backupPage = backupRepository.findAll(spec, pageable);
-
-    // DTO 변환 로직
-    return backupPage.map(backup -> BackupDto.builder()
-            .id(backup.getId())
-            .worker(backup.getWorkerIpAddress())
-            .status(backup.getStatus())
-            .startedAt(backup.getStartedAt())
-            .endedAt(backup.getEndedAt())
-            .fileId(Optional.ofNullable(backup.getBinaryContent()).map(file -> file.getId()).orElse(null))
-            .build());
   }
 }

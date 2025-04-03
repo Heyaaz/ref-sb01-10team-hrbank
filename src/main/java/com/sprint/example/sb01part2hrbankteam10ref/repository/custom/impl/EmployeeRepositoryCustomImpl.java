@@ -20,6 +20,7 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
 
   private final JPAQueryFactory queryFactory;
 
+
   @Override
   public List<Employee> findEmployeesWithCursor(
       String nameOrEmail, String employeeNumber, String departmentName,

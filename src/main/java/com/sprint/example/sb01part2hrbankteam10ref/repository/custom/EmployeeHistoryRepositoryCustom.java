@@ -2,7 +2,6 @@ package com.sprint.example.sb01part2hrbankteam10ref.repository.custom;
 
 import com.sprint.example.sb01part2hrbankteam10ref.entity.EmployeeHistory;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.EmployeeHistory.ChangeType;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 

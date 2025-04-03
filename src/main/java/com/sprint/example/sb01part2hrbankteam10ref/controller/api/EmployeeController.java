@@ -19,6 +19,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -129,8 +130,8 @@ public class EmployeeController {
   @GetMapping("/count")
   public ResponseEntity<Long> getEmployeeCount(
       @RequestParam(required = false) EmployeeStatus status,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+      @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate fromDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate toDate) {
 
     return ResponseEntity.ok()
         .body(employeeStatusService.getCount(status, fromDate, toDate));

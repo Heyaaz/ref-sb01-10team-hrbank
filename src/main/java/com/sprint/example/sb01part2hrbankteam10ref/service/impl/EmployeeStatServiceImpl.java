@@ -160,6 +160,9 @@ public class EmployeeStatServiceImpl implements EmployeeStatService {
 
     if (status != null) {
       spec = spec.and(EmployeeSpecification.equalStatus(status));
+    } else {
+      spec = spec.and(EmployeeSpecification.equalStatus(EmployeeStatus.ACTIVE))
+          .or(EmployeeSpecification.equalStatus(EmployeeStatus.ON_LEAVE));
     }
 
     if (fromDate != null) {

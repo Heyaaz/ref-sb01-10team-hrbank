@@ -31,17 +31,20 @@ public interface EmployeeRepository extends JpaRepository<Employee, Integer>,
   //부서에 속한 직원이 있는지 확인
   boolean existsByDepartmentId(Integer id);
 
-  Page<Employee> findAll(Specification<Employee> spec, Pageable pageable);
 
   /**
    * 부서, 직함 별 직원 수 조회
+   * TOOD: 부서, 직원 퍼센테이지 수정
    */
-  @Query( value =
+  @Query(value =
       "SELECT "
           + "new com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeDistributionDto("
-          + "e.position , COUNT(e.id), COUNT(e) * 100.0 / (SELECT COUNT(e) FROM Employee e)) "
+          + "e.position, "
+          + "COUNT(e.id), "
+          + "COUNT(e) * 100.0 / (SELECT COUNT(e2) FROM Employee e2 WHERE e2.status IN ('ACTIVE', 'ON_LEAVE'))"
+          + ") "
           + "FROM Employee e "
-          + "WHERE e.status = :status "
+          + "WHERE e.status IN ('ACTIVE', 'ON_LEAVE') "
           + "GROUP BY e.position"
   )
   List<EmployeeDistributionDto> findGroupByPosition(
@@ -52,11 +55,12 @@ public interface EmployeeRepository extends JpaRepository<Employee, Integer>,
   @Query( value =
       "SELECT "
           + "new com.sprint.example.sb01part2hrbankteam10ref.dto.employee.EmployeeDistributionDto("
-          + "d.name, COUNT(e), COUNT(e) * 100.0 / (SELECT COUNT(e) FROM Employee e)) "
+          + "d.name, COUNT(e), COUNT(e) * 100.0 / "
+          + "(SELECT COUNT(e2) FROM Employee e2 WHERE e2.status IN ('ACTIVE', 'ON_LEAVE'))) "
           + "FROM Employee e "
           + "LEFT JOIN Department d "
           + "ON e.department.id = d.id "
-          + "WHERE e.status = :status "
+          + "WHERE e.status IN ('ACTIVE', 'ON_LEAVE')"
           + "GROUP BY d.name"
   )
   List<EmployeeDistributionDto> findGroupByDepartment(

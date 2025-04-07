@@ -388,6 +388,7 @@ public class BackupServiceImpl implements BackupService {
     return employeeForBackupDtoList;
   }
 
+  @Transactional(readOnly = true)
   @Override
   public CursorPageResponseDto<BackupResponseDto> getBackupList(String workerIpAddress,
       BackupStatus status, LocalDateTime startedAtFrom, LocalDateTime startedAtTo, Integer fileId,

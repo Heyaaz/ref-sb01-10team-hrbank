@@ -47,6 +47,7 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
         return EmployeeHistoryMapper.toChangeLogDto(savedHistory);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public CursorPageResponseDto getEmployeeHistoriesWithCursor(String employeeNumber,
         ChangeType type, String memo, String ipAddress, LocalDateTime atFrom, LocalDateTime atTo,

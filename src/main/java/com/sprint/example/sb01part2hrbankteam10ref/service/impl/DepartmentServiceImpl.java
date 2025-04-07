@@ -175,6 +175,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         .collect(Collectors.toList());
   }
 
+  @Transactional(readOnly = true)
   @Override
   public DepartmentDto find(Integer id) {
     Department department = departmentRepository.findById(id)
@@ -184,6 +185,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     return departmentMapper.toDto(department);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public List<DepartmentDto> getAll() {
     List<Department> departments = departmentRepository.findAll();
@@ -197,6 +199,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         .collect(Collectors.toList());
   }
 
+  @Transactional(readOnly = true)
   @Override
   public CursorPageResponseDto<DepartmentResponseDto> getDepartmentsWithCursor(
       String nameOrDescription, 

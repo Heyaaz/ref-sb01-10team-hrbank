@@ -1,5 +1,6 @@
 package com.sprint.example.sb01part2hrbankteam10ref.repository.custom.impl;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -8,6 +9,7 @@ import com.sprint.example.sb01part2hrbankteam10ref.entity.Employee.EmployeeStatu
 import com.sprint.example.sb01part2hrbankteam10ref.entity.QEmployee;
 import com.sprint.example.sb01part2hrbankteam10ref.repository.custom.EmployeeRepositoryCustom;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -166,5 +168,50 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
         .leftJoin(employee.department).fetchJoin()
         .where(employee.id.eq(id))
         .fetchOne();
+  }
+
+  @Override
+  public long countByStatusAndHireDate(EmployeeStatus status, LocalDateTime fromDate, LocalDateTime toDate) {
+    QEmployee employee = QEmployee.employee;
+
+    BooleanExpression predicate = buildCountPredicate(employee, status, fromDate, toDate);
+
+    Long count = queryFactory
+        .select(employee.count())
+        .from(employee)
+        .where(predicate)
+        .fetchOne();
+
+    return count != null ? count : 0L;
+  }
+
+  private BooleanExpression buildCountPredicate(QEmployee employee, EmployeeStatus status, LocalDateTime fromDate, LocalDateTime toDate) {
+
+    BooleanExpression expression = null;
+
+    BooleanExpression statusExpression = null;
+    if (status != null) {
+      statusExpression = employee.status.eq(status);
+    } else {
+      // status가 null이면 ACTIVE 또는 ON_LEAVE
+      statusExpression = employee.status.eq(EmployeeStatus.ACTIVE)
+          .or(employee.status.eq(EmployeeStatus.ON_LEAVE));
+    }
+    expression = statusExpression;
+
+
+    if (fromDate != null) {
+      BooleanExpression fromDateExpression = employee.hireDate.goe(fromDate);
+      // 기존 expression에 and 연산으로 추가
+      expression = (expression == null) ? fromDateExpression : expression.and(fromDateExpression);
+    }
+
+    if (toDate != null) {
+      BooleanExpression toDateExpression = employee.hireDate.lt(toDate);
+      // 기존 expression에 and 연산으로 추가
+      expression = (expression == null) ? toDateExpression : expression.and(toDateExpression);
+    }
+
+    return expression;
   }
 }

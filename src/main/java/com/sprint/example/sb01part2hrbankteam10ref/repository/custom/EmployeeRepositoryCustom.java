@@ -3,6 +3,7 @@ package com.sprint.example.sb01part2hrbankteam10ref.repository.custom;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.Employee;
 import com.sprint.example.sb01part2hrbankteam10ref.entity.Employee.EmployeeStatus;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface EmployeeRepositoryCustom {
@@ -14,4 +15,5 @@ public interface EmployeeRepositoryCustom {
 
   Employee findEmployeeByIdWithDepartment(Integer id);
 
+  long countByStatusAndHireDate(EmployeeStatus status, LocalDateTime fromDate, LocalDateTime toDate);
 }

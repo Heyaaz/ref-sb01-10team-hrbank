@@ -140,50 +140,13 @@ public class EmployeeStatServiceImpl implements EmployeeStatService {
 
   @Override
   @Transactional(readOnly = true)
-  public Long getCount(EmployeeStatus status, LocalDate fromDate,
-      LocalDate toDate) {
-
+  public Long getCount(EmployeeStatus status, LocalDate fromDate, LocalDate toDate) {
     LocalDateTime fromDateTime = fromDate != null ? fromDate.atStartOfDay() : null;
     LocalDateTime toDateTime = toDate != null ? toDate.atStartOfDay() : LocalDateTime.now();
 
     log.info("status: {}, fromDate: {}, toDate: {}", status, fromDateTime, toDateTime);
-    Specification<Employee> specification = getCountSpecification(status, fromDateTime, toDateTime);
 
-    return employeeRepository.count(specification);
-  }
-
-
-  private Specification<Employee> getCountSpecification(EmployeeStatus status, LocalDateTime fromDate,
-      LocalDateTime toDate) {
-
-    Specification<Employee> spec = ((root, query, criteriaBuilder) -> null);
-
-    if (status != null) {
-      spec = spec.and(EmployeeSpecification.equalStatus(status));
-    } else {
-      spec = spec.and(EmployeeSpecification.equalStatus(EmployeeStatus.ACTIVE))
-          .or(EmployeeSpecification.equalStatus(EmployeeStatus.ON_LEAVE));
-    }
-
-    if (fromDate != null) {
-      spec = spec.and(EmployeeSpecification.equalOrGreaterThanHireDateFrom(fromDate));
-    }
-
-    if (toDate != null) {
-      spec = spec.and(EmployeeSpecification.lessThanHireDate(toDate));
-    }
-
-    return spec;
-  }
-
-  private Specification<Employee> getDistributionSpecification(String groupBy, EmployeeStatus status) {
-    Specification<Employee> spec = ((root, query, criteriaBuilder) -> null);
-
-    if (status != null) {
-      spec = spec.and(EmployeeSpecification.equalStatus(status));
-    }
-
-    return spec;
+    return employeeRepository.countByStatusAndHireDate(status, fromDateTime, toDateTime);
   }
 
   private Double round(Double value, int places) {
